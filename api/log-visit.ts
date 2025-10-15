@@ -1,4 +1,3 @@
-
 // This file should be placed in the `api` directory at the root of your project.
 // It requires a hosting environment that supports serverless functions (e.g., Vercel, Netlify).
 // You will also need to install the Supabase JS library in that environment.
@@ -7,12 +6,21 @@
 // For now, we assume the library is available in the runtime.
 import { createClient } from '@supabase/supabase-js';
 
+// Define common headers to prevent caching
+const NO_CACHE_HEADERS = {
+  'Content-Type': 'application/json',
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+  'Pragma': 'no-cache',
+  'Expires': '0',
+  'Surrogate-Control': 'no-store',
+};
+
 // This is a common function signature for modern Edge Functions (Vercel, Netlify, etc.).
 // It uses the standard Web API Request and Response objects.
 export default async (req: Request): Promise<Response> => {
   // We only want to handle POST requests for this action.
   if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405, headers: { Allow: 'POST' } });
+    return new Response('Method Not Allowed', { status: 405, headers: { ...NO_CACHE_HEADERS, Allow: 'POST' } });
   }
 
   // Retrieve Supabase credentials from environment variables for security.
@@ -25,7 +33,7 @@ export default async (req: Request): Promise<Response> => {
     // Do not expose detailed errors to the client.
     return new Response(JSON.stringify({ error: 'Server configuration error.' }), { 
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: NO_CACHE_HEADERS,
     });
   }
 
@@ -48,21 +56,21 @@ export default async (req: Request): Promise<Response> => {
       console.error('Supabase insert error:', error.message);
       return new Response(JSON.stringify({ error: 'Could not log visit.' }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' },
+        headers: NO_CACHE_HEADERS,
       });
     }
     
-    // Return a success response to the client.
+    // Return a success response to the client with no-cache headers.
     return new Response(JSON.stringify({ message: 'Visit logged successfully.' }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: NO_CACHE_HEADERS,
     });
 
   } catch (err) {
     console.error('Handler error:', err);
     return new Response(JSON.stringify({ error: 'An unexpected error occurred.' }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' },
+        headers: NO_CACHE_HEADERS,
     });
   }
 };
