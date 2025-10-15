@@ -1,0 +1,106 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gradient Product Showcase</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: 0, transform: 'scale(0.95)' },
+                '100%': { opacity: 1, transform: 'scale(1)' },
+              },
+              fadeInUp: {
+                '0%': { opacity: 0, transform: 'translateY(20px)' },
+                '100%': { opacity: 1, transform: 'translateY(0)' },
+              },
+              fadeInDown: {
+                '0%': { opacity: 0, transform: 'translateY(-20px)' },
+                '100%': { opacity: 1, transform: 'translateY(0)' },
+              },
+              numberFlip: {
+                '0%': { opacity: 0, transform: 'translateY(0.5em)' },
+                '100%': { opacity: 1, transform: 'translateY(0)' },
+              },
+              jiggle: {
+                '0%, 100%': { transform: 'scale(1) rotate(0)' },
+                '25%': { transform: 'scale(1.1) rotate(-3deg)' },
+                '75%': { transform: 'scale(1.1) rotate(3deg)' },
+              },
+              spinner: {
+                '0%': { transform: 'rotate(0deg)' },
+                '100%': { transform: 'rotate(360deg)' },
+              },
+              'background-pan': {
+                '0%': { 'background-position': '0% 50%' },
+                '50%': { 'background-position': '100% 50%' },
+                '100%': { 'background-position': '0% 50%' },
+              },
+              'price-show': {
+                '0%': { opacity: 0, transform: 'translateY(10px) scale(0.9)' },
+                '100%': { opacity: 1, transform: 'translateY(0) scale(1)' },
+              },
+              'price-hide-slash': {
+                '0%': { transform: 'scaleX(0)' },
+                '100%': { transform: 'scaleX(1)' },
+              },
+              'card-swoop': {
+                '0%': { transform: 'translate(100px, -100px) rotate(45deg)', opacity: 0 },
+                '50%': { transform: 'translate(0, 0) rotate(0)', opacity: 1 },
+                '100%': { transform: 'translate(0, 0) rotate(0)', opacity: 1 },
+              },
+              'shine': {
+                '0%': { transform: 'translateX(-100%)' },
+                '100%': { transform: 'translateX(100%)' },
+              },
+              'breathingGlow': {
+                '0%, 100%': { 'box-shadow': '0 0 15px 5px rgba(56, 189, 248, 0.2)' },
+                '50%': { 'box-shadow': '0 0 30px 10px rgba(56, 189, 248, 0.4)' },
+              },
+              'icon-swoop-in': {
+                '0%': { opacity: 0, transform: 'scale(0.5) rotate(-90deg)' },
+                '100%': { opacity: 1, transform: 'scale(1) rotate(0deg)' },
+              },
+            },
+            animation: {
+              fadeIn: 'fadeIn 0.3s ease-out',
+              fadeInUp: 'fadeInUp 0.5s ease-out forwards',
+              fadeInDown: 'fadeInDown 0.5s ease-out',
+              numberFlip: 'numberFlip 0.3s ease-out forwards',
+              jiggle: 'jiggle 0.4s ease-in-out',
+              spinner: 'spinner 1.2s linear infinite',
+              'background-pan': 'background-pan 15s ease infinite',
+              'price-show': 'price-show 0.5s ease-out 0.8s forwards',
+              'price-hide-slash': 'price-hide-slash 0.5s ease-out 0.4s forwards',
+              'card-swoop': 'card-swoop 1s ease-out forwards',
+              'shine': 'shine 1s ease-in-out',
+              'breathingGlow': 'breathingGlow 5s ease-in-out infinite',
+              'icon-swoop-in': 'icon-swoop-in 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards',
+            },
+          },
+        },
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.75.0"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
