@@ -39,9 +39,16 @@ export default async (req: Request): Promise<Response> => {
 
   try {
     // Extract the user's IP address from the request headers.
-    // 'x-forwarded-for' is the standard header for identifying the originating IP address
-    // of a client connecting to a web server through a proxy.
-    const ip = req.headers.get('x-forwarded-for')?.split(',').shift()?.trim() || 'unknown';
+    // 'x-forwarded-for' is the standard header, but some environments use others like 'x-real-ip'.
+    // We check multiple headers to be more robust.
+    const ip = req.headers.get('x-forwarded-for')?.split(',').shift()?.trim() 
+             || req.headers.get('x-real-ip')?.trim()
+             || 'unknown';
+
+    // For debugging purposes, log the headers and the detected IP.
+    // You can view these logs in your hosting provider's dashboard.
+    console.log('Request Headers:', Object.fromEntries(req.headers));
+    console.log('Detected IP:', ip);
     
     // Initialize the Supabase client using the secure service key.
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -67,7 +74,8 @@ export default async (req: Request): Promise<Response> => {
     });
 
   } catch (err) {
-    console.error('Handler error:', err);
+    const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred.';
+    console.error('Handler error:', errorMessage);
     return new Response(JSON.stringify({ error: 'An unexpected error occurred.' }), {
         status: 500,
         headers: NO_CACHE_HEADERS,
