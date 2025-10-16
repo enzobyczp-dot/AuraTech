@@ -39,10 +39,11 @@ export default async (req: Request): Promise<Response> => {
 
   try {
     // Extract the user's IP address from the request headers.
-    // 'x-forwarded-for' is the standard header, but some environments use others like 'x-real-ip'.
-    // We check multiple headers to be more robust.
-    const ip = req.headers.get('x-forwarded-for')?.split(',').shift()?.trim() 
-             || req.headers.get('x-real-ip')?.trim()
+    // We prioritize platform-specific headers (like Vercel's) for accuracy,
+    // then fall back to standard headers.
+    const ip = req.headers.get('x-vercel-forwarded-for')?.trim() // Vercel-specific header
+             || req.headers.get('x-forwarded-for')?.split(',').shift()?.trim() // Standard header
+             || req.headers.get('x-real-ip')?.trim() // Another common proxy header
              || 'unknown';
 
     // For debugging purposes, log the headers and the detected IP.
