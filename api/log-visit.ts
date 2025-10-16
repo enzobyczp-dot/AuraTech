@@ -61,18 +61,21 @@ export default async (req: Request): Promise<Response> => {
     // If neither is available, fallback to 'unknown'.
     const finalIp = serverDetectedIp || clientDetectedIp || 'unknown';
 
-    // For debugging purposes, log all sources.
-    console.log('Request Headers:', Object.fromEntries(req.headers));
-    console.log(`Server-Detected IP: ${serverDetectedIp}, Client-Detected IP: ${clientDetectedIp}`);
-    console.log('Final IP for logging:', finalIp);
+    // **Diagnostic Logging: Capture the full request URL**
+    // This includes the cache-busting timestamp and serves as proof of execution.
+    const requestUrl = req.url;
 
     // Initialize the Supabase client using the secure service key.
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Insert a new row into the 'visits' table with the final determined IP address.
+    // Insert a new row into the 'visits' table with the final determined IP address
+    // and the full request URL for verification.
     const { error } = await supabase
       .from('visits')
-      .insert({ ip_address: finalIp });
+      .insert({ 
+        ip_address: finalIp,
+        request_url: requestUrl // Save the unique URL as proof
+      });
 
     if (error) {
       console.error('Supabase insert error:', error.message);
