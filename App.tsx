@@ -67,17 +67,41 @@ export default function App() {
     }
   }, [theme]);
 
-  // Log user visit on initial load
+  // Log user visit on initial load with a client-side IP fallback
   useEffect(() => {
-    // We send a POST request to our serverless function endpoint.
-    // This triggers the backend logic to log the IP address.
-    // We don't need to do anything with the response on the client side.
-    // The catch block prevents any potential logging failure from crashing the app.
-    fetch('/api/log-visit', { method: 'POST' })
-      .catch(error => {
-        console.warn('Could not log user visit:', error);
-      });
+    const logVisit = async () => {
+      try {
+        // 1. Fetch the client's public IP as a fallback data point.
+        let clientIp: string | null = null;
+        try {
+          const ipResponse = await fetch('https://api.ipify.org?format=json');
+          if (ipResponse.ok) {
+            const ipData = await ipResponse.json();
+            clientIp = ipData.ip;
+          }
+        } catch (ipError) {
+          console.warn('Could not fetch client IP for logging fallback:', ipError);
+        }
+
+        // 2. Send the request to our serverless function.
+        // The server will prioritize its own IP detection method but can use `clientIp` if needed.
+        await fetch('/api/log-visit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          // Send the client-side IP in the body. It's ok if it's null.
+          body: JSON.stringify({ clientIp }),
+        });
+      } catch (logError) {
+        // This catch block handles errors from the fetch call to our own API.
+        console.warn('Could not log user visit:', logError);
+      }
+    };
+    
+    logVisit();
   }, []); // The empty dependency array ensures this runs only once on initial app load.
+
 
   const toggleTheme = useCallback(() => {
     setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));

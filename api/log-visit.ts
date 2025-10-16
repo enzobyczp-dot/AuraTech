@@ -38,27 +38,41 @@ export default async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Extract the user's IP address from the request headers.
-    // We prioritize platform-specific headers (like Vercel's) for accuracy,
-    // then fall back to standard headers.
-    const ip = req.headers.get('x-vercel-forwarded-for')?.trim() // Vercel-specific header
-             || req.headers.get('x-forwarded-for')?.split(',').shift()?.trim() // Standard header
-             || req.headers.get('x-real-ip')?.trim() // Another common proxy header
-             || 'unknown';
+    // **Source 1: Server-Side Detection (Primary and most reliable)**
+    // Extract IP from trusted headers. This is the preferred method as it's harder to spoof.
+    const serverDetectedIp = req.headers.get('x-vercel-forwarded-for')?.trim()
+                         || req.headers.get('x-forwarded-for')?.split(',').shift()?.trim()
+                         || req.headers.get('x-real-ip')?.trim();
 
-    // For debugging purposes, log the headers and the detected IP.
-    // You can view these logs in your hosting provider's dashboard.
+    // **Source 2: Client-Side Detection (Fallback)**
+    // Get the IP that the client detected for itself. This is a fallback in case headers are missing.
+    let clientDetectedIp: string | null = null;
+    try {
+      const body = await req.json();
+      if (body && typeof body.clientIp === 'string') {
+        clientDetectedIp = body.clientIp;
+      }
+    } catch (e) {
+      // Body might be empty or not valid JSON, which is fine. We'll just ignore it.
+    }
+
+    // **Final IP determination**
+    // Prioritize the server-detected IP. If it's not available, use the client-provided one.
+    // If neither is available, fallback to 'unknown'.
+    const finalIp = serverDetectedIp || clientDetectedIp || 'unknown';
+
+    // For debugging purposes, log all sources.
     console.log('Request Headers:', Object.fromEntries(req.headers));
-    console.log('Detected IP:', ip);
-    
+    console.log(`Server-Detected IP: ${serverDetectedIp}, Client-Detected IP: ${clientDetectedIp}`);
+    console.log('Final IP for logging:', finalIp);
+
     // Initialize the Supabase client using the secure service key.
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Insert a new row into the 'visits' table with the captured IP address.
-    // The 'created_at' column in Supabase can be set to default to now().
+    // Insert a new row into the 'visits' table with the final determined IP address.
     const { error } = await supabase
       .from('visits')
-      .insert({ ip_address: ip });
+      .insert({ ip_address: finalIp });
 
     if (error) {
       console.error('Supabase insert error:', error.message);
@@ -68,7 +82,7 @@ export default async (req: Request): Promise<Response> => {
       });
     }
     
-    // Return a success response to the client with no-cache headers.
+    // Return a success response to the client.
     return new Response(JSON.stringify({ message: 'Visit logged successfully.' }), {
       status: 200,
       headers: NO_CACHE_HEADERS,
