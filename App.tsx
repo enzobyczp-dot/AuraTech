@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
@@ -82,9 +83,9 @@ export default function App() {
           console.warn('Could not fetch client IP for logging fallback:', ipError);
         }
 
-        // 2. Send the request to our serverless function.
-        // The server will prioritize its own IP detection method but can use `clientIp` if needed.
-        await fetch('/api/log-visit', {
+        // 2. Send the request to our serverless function with a cache-busting parameter.
+        // The unique timestamp forces Vercel to treat this as a new request every time.
+        await fetch(`/api/log-visit?t=${Date.now()}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -92,126 +93,104 @@ export default function App() {
           // Send the client-side IP in the body. It's ok if it's null.
           body: JSON.stringify({ clientIp }),
         });
+      // FIX: The catch block was malformed and contained extraneous text.
       } catch (logError) {
-        // This catch block handles errors from the fetch call to our own API.
-        console.warn('Could not log user visit:', logError);
+        console.error('Failed to log visit:', logError);
       }
     };
-    
+
     logVisit();
-  }, []); // The empty dependency array ensures this runs only once on initial app load.
+  }, []);
 
+  const t = translations[language];
 
-  const toggleTheme = useCallback(() => {
-    setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
-  }, [setTheme]);
-
-  const handleSelectService = useCallback((service: Service) => {
+  const handleProductClick = useCallback((service: Service) => {
     setSelectedService(service);
   }, []);
 
-  const handleCloseProductModal = useCallback(() => {
+  const handleCloseModal = useCallback(() => {
     setSelectedService(null);
   }, []);
 
   const handleAddToCart = useCallback((service: Service, tier: PricingTier) => {
     setCart(prevCart => {
-      const existingItemIndex = prevCart.findIndex(item => item.serviceId === service.id);
-      const newItem: CartItem = {
-        serviceId: service.id,
-        name: service.name,
-        imageUrl: service.imageUrl,
-        selectedTier: tier,
-      };
-
-      if (existingItemIndex > -1) {
-        const updatedCart = [...prevCart];
-        updatedCart[existingItemIndex] = newItem;
-        return updatedCart;
+      const existingItem = prevCart.find(item => item.serviceId === service.id);
+      if (existingItem) {
+        return prevCart.map(item =>
+          item.serviceId === service.id ? { ...item, selectedTier: tier } : item
+        );
       }
-      return [...prevCart, newItem];
+      return [...prevCart, { serviceId: service.id, name: service.name, imageUrl: service.imageUrl, selectedTier: tier }];
     });
-    
     setIsCartAnimating(true);
-    setTimeout(() => setIsCartAnimating(false), 400);
+    setTimeout(() => setIsCartAnimating(false), 500);
+  }, [setCart]);
 
+  const handleRemoveFromCart = useCallback((serviceId: number) => {
+    setCart(prevCart => prevCart.filter(item => item.serviceId !== serviceId));
   }, [setCart]);
   
-  const handleRemoveFromCart = useCallback((serviceId: number) => {
-     setCart(prevCart => prevCart.filter(item => item.serviceId !== serviceId));
-  }, [setCart]);
-
-  const handleOpenCart = useCallback(() => setIsCartOpen(true), []);
-  const handleCloseCart = useCallback(() => setIsCartOpen(false), []);
-
-  const handleCheckout = useCallback(() => {
+  const handleCheckout = () => {
     setIsCartOpen(false);
     setIsCheckoutOpen(true);
-  }, []);
+  };
   
-  const handleCloseCheckout = useCallback(() => {
+  const handleFinishCheckout = () => {
     setIsCheckoutOpen(false);
-  }, []);
-
-  const handleFinishOrder = useCallback(() => {
     setCart([]);
-    setIsCheckoutOpen(false);
-  }, [setCart]);
-  
+  };
+
   const handleResetFilters = useCallback(() => {
     setSearchTerm('');
     setSelectedCategory('all');
     setCurrentMaxPrice(maxPrice);
+    setCurrentPage(1);
   }, [maxPrice]);
 
-  const cartItemCount = cart.length;
+  // Derived state for filtering and pagination
+  const filteredServices = useMemo(() => {
+    return SERVICES
+      .filter(service => {
+        const searchTermLower = searchTerm.toLowerCase();
+        return service.name.toLowerCase().includes(searchTermLower) ||
+               service.description.toLowerCase().includes(searchTermLower) ||
+               service.category.toLowerCase().includes(searchTermLower);
+      })
+      .filter(service => {
+        return selectedCategory === 'all' || service.category === selectedCategory;
+      })
+      .filter(service => {
+        return service.tiers.some(tier => tier.price <= currentMaxPrice);
+      });
+  }, [searchTerm, selectedCategory, currentMaxPrice]);
 
-  const totalPrice = useMemo(() => {
+  const totalPages = Math.ceil(filteredServices.length / ITEMS_PER_PAGE);
+  const paginatedServices = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredServices.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredServices, currentPage]);
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+
+  const cartItemCount = cart.length;
+  const cartTotalPrice = useMemo(() => {
     return cart.reduce((total, item) => total + item.selectedTier.price, 0);
   }, [cart]);
 
-  const filteredServices = useMemo(() => {
-    if (currentMaxPrice === undefined) return SERVICES;
-    const searchLower = searchTerm.toLowerCase();
-    
-    return SERVICES.filter(service => {
-      const matchesSearch = service.name.toLowerCase().includes(searchLower) ||
-                            service.description.toLowerCase().includes(searchLower);
-      const matchesCategory = selectedCategory === 'all' || service.category === selectedCategory;
-      // Filter based on the price of the lowest tier
-      const matchesPrice = service.tiers[0].price <= currentMaxPrice;
-
-      return matchesSearch && matchesCategory && matchesPrice;
-    });
-  }, [searchTerm, selectedCategory, currentMaxPrice]);
-  
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, selectedCategory, currentMaxPrice]);
-
-  const paginatedServices = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
-    return filteredServices.slice(startIndex, endIndex);
-  }, [filteredServices, currentPage]);
-
-  const totalPages = Math.ceil(filteredServices.length / ITEMS_PER_PAGE);
-
-  const handlePageChange = useCallback((page: number) => {
-    setCurrentPage(page);
-  }, []);
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [currentPage]);
-  
-  const t = translations[language];
+  const toggleTheme = () => {
+    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+  };
 
   return (
-    <div className={`min-h-screen font-sans text-gray-800 dark:text-gray-200 transition-colors duration-500 flex flex-col bg-gradient-to-br from-sky-50 via-white to-slate-100 dark:from-gray-900 dark:via-gray-900 dark:to-slate-800 bg-[length:200%_200%] animate-background-pan`}>
+    <div className="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen font-sans">
       <Header 
-        cartItemCount={cartItemCount} 
-        onCartClick={handleOpenCart} 
+        cartItemCount={cartItemCount}
+        onCartClick={() => setIsCartOpen(true)}
         theme={theme}
         toggleTheme={toggleTheme}
         isCartAnimating={isCartAnimating}
@@ -219,10 +198,9 @@ export default function App() {
         language={language}
         setLanguage={setLanguage}
       />
-      
-      <Hero t={t} />
 
-      <main className="container mx-auto px-4 py-8 flex-grow">
+      <main className="container mx-auto px-4 pt-8">
+        <Hero t={t} />
         <ValuePropositionBanner t={t} />
 
         <Filters
@@ -242,27 +220,28 @@ export default function App() {
           <LoadingSpinner />
         ) : (
           <>
-            <ProductList products={paginatedServices} onProductClick={handleSelectService} t={t} />
-            <Pagination 
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-              t={t}
-            />
+            <ProductList products={paginatedServices} onProductClick={handleProductClick} t={t} />
+            {totalPages > 1 && (
+              <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} t={t} />
+            )}
           </>
         )}
       </main>
-
-      <ProductModal
-        product={selectedService}
-        onClose={handleCloseProductModal}
-        onAddToCart={handleAddToCart}
-        t={t}
-      />
       
+      <Footer t={t} />
+
+      {selectedService && (
+        <ProductModal
+          product={selectedService}
+          onClose={handleCloseModal}
+          onAddToCart={handleAddToCart}
+          t={t}
+        />
+      )}
+
       <CartModal
         isOpen={isCartOpen}
-        onClose={handleCloseCart}
+        onClose={() => setIsCartOpen(false)}
         cartItems={cart}
         onRemoveItem={handleRemoveFromCart}
         onCheckout={handleCheckout}
@@ -271,13 +250,11 @@ export default function App() {
 
       <CheckoutModal
         isOpen={isCheckoutOpen}
-        onClose={handleCloseCheckout}
-        onFinish={handleFinishOrder}
-        totalPrice={totalPrice}
+        onClose={() => setIsCheckoutOpen(false)}
+        onFinish={handleFinishCheckout}
+        totalPrice={cartTotalPrice}
         t={t}
       />
-
-      <Footer t={t} />
     </div>
   );
 }
