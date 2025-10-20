@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
@@ -10,6 +9,7 @@ import Filters from './components/Filters';
 import Pagination from './components/Pagination';
 import Footer from './components/Footer';
 import ValuePropositionBanner from './components/ValuePropositionBanner';
+import ScrollToTopButton from './components/ScrollToTopButton';
 import { SpinnerIcon } from './components/Icons';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { SERVICES } from './constants';
@@ -255,6 +255,8 @@ export default function App() {
         totalPrice={cartTotalPrice}
         t={t}
       />
+
+      <ScrollToTopButton t={t} />
     </div>
   );
 }

@@ -1,4 +1,3 @@
-
 export interface PricingTier {
   name: string;
   price: number;
@@ -28,6 +27,7 @@ export type Translation = {
   phoneAria: string;
   telegramAria: string;
   backToTopAria: string;
+  scrollToTopAria: string;
   
   // ThemeToggle
   toggleThemeAria: string;

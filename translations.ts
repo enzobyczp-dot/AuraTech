@@ -1,4 +1,3 @@
-
 import { Translation } from "./types";
 
 const en: Translation = {
@@ -7,6 +6,7 @@ const en: Translation = {
   phoneAria: "Telephone/Zalo",
   telegramAria: "Telegram Profile",
   backToTopAria: "Back to top",
+  scrollToTopAria: "Scroll to top",
 
   // ThemeToggle
   toggleThemeAria: "Toggle theme",
@@ -101,6 +101,7 @@ const vi: Translation = {
   phoneAria: "Điện thoại/Zalo",
   telegramAria: "Hồ sơ Telegram",
   backToTopAria: "Quay về đầu trang",
+  scrollToTopAria: "Cuộn lên đầu trang",
 
   // ThemeToggle
   toggleThemeAria: "Chuyển đổi giao diện",
@@ -195,6 +196,7 @@ const th: Translation = {
   phoneAria: "โทรศัพท์/Zalo",
   telegramAria: "โปรไฟล์ Telegram",
   backToTopAria: "กลับไปด้านบน",
+  scrollToTopAria: "เลื่อนไปด้านบนสุด",
 
   // ThemeToggle
   toggleThemeAria: "สลับธีม",

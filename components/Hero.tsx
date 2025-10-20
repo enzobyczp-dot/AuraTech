@@ -22,7 +22,7 @@ const PromoLine: React.FC = () => {
   const [phase, setPhase] = useState('cycling'); // 'cycling', 'paused', 'finished'
 
   useEffect(() => {
-    let cycleInterval: number;
+    let cycleInterval: number | undefined;
     let phaseTimer: number;
 
     if (phase === 'cycling') {
@@ -38,10 +38,14 @@ const PromoLine: React.FC = () => {
       phaseTimer = window.setTimeout(() => {
         setPhase('finished');
       }, 500);
+    } else if (phase === 'finished') {
+      phaseTimer = window.setTimeout(() => {
+        setPhase('cycling');
+      }, 4000); // Loop back to cycling after 4 seconds
     }
 
     return () => {
-      clearInterval(cycleInterval);
+      if (cycleInterval) clearInterval(cycleInterval);
       clearTimeout(phaseTimer);
     };
   }, [phase]);
@@ -62,7 +66,7 @@ const PromoLine: React.FC = () => {
         return <span><CyclingContent deal={deal} /></span>;
       case 'finished':
         return (
-          <div className="flex items-center justify-center md:justify-start gap-2 sm:gap-3 animate-fadeIn">
+          <div className="flex items-center justify-center gap-2 sm:gap-3 animate-fadeIn">
             <span className="hidden sm:inline">
               All subscriptions{' '}
               <s className="text-red-500/80">${finalDeal.oldPrice.toFixed(2)}</s>
@@ -84,7 +88,7 @@ const PromoLine: React.FC = () => {
   };
 
   return (
-    <div className="mb-4 h-10 flex justify-center md:justify-start items-center text-center p-2 font-mono text-sm md:text-base text-gray-400 dark:text-gray-300 bg-slate-200/50 dark:bg-black/30 rounded-lg backdrop-blur-sm border border-white/10 shadow-inner">
+    <div className="mb-4 h-10 flex justify-center items-center text-center p-2 font-mono text-sm md:text-base text-gray-400 dark:text-gray-300 bg-slate-200/50 dark:bg-black/30 rounded-lg backdrop-blur-sm border border-white/10 shadow-inner">
       <div className="transition-all duration-300">{renderContent()}</div>
     </div>
   );
@@ -104,18 +108,18 @@ const Hero: React.FC<HeroProps> = ({ t }) => {
     <section className="container mx-auto px-4 flex items-center min-h-[50vh] py-12 sm:py-16">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center w-full">
         {/* Left side: Text and CTA */}
-        <div className="text-center md:text-left animate-fadeInUp">
+        <div className="text-center animate-fadeInUp">
           <PromoLine />
           <h1 className="text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-sky-500 to-indigo-600 dark:from-sky-400 dark:to-indigo-500 pb-2">
             {t.heroTitle}
           </h1>
-          <p className="mt-4 text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto md:mx-0">
+          <p className="mt-4 text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
             {t.heroSubtitle}
           </p>
           <div className="mt-8">
              <button
               onClick={scrollToProducts}
-              className="relative overflow-hidden px-8 py-3 text-lg bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-bold rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 group"
+              className="relative overflow-hidden px-8 py-3 text-lg bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-bold rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 group bg-[length:200%_auto] animate-background-pan-button"
             >
               {t.heroCTA}
               <div className="absolute top-0 -left-full w-full h-full bg-white opacity-20 transform -skew-x-45 group-hover:animate-shine"></div>
